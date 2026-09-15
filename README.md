@@ -14,18 +14,21 @@ Template prêt à l'emploi pour créer un site statique avec [Astro](https://ast
 
 ## Mise en route
 
-### 1. Cloner et installer
+### 1. Créer le repo et installer
+
+Sur [bruno-Sigmapix/tinaCMS-template](https://github.com/bruno-Sigmapix/tinaCMS-template), cliquer **"Use this template"** > **"Create a new repository"**, puis :
 
 ```bash
-git clone <repo-url> mon-site
+git clone <url-de-votre-nouveau-repo> mon-site
 cd mon-site
-git remote set-url origin <url-de-votre-nouveau-repo>
 docker compose run --rm dev npm install
 ```
 
+> **Important :** ne pas faire `npm install` en local. Les dépendances doivent être installées dans le container Docker (Alpine/musl). Un `npm install` sur la machine hôte produira des binaires natifs incompatibles avec le container.
+
 ### 2. Créer le projet TinaCloud
 
-1. Aller sur [app.tina.io](https://app.tina.io)
+1. Aller sur [app.tina.io](https://app.tina.io) et se connecter
 2. **Add Project** > **Existing Project**
 3. Sélectionner **Only select repositories** et choisir votre repo
 4. Configurer **Set up Git Authoring** : choisir *Act as bot* (TinaCloud commite en son nom) ou *Act as self* (commite au nom de l'utilisateur)
@@ -43,8 +46,8 @@ cp .env.example .env
 Remplir les valeurs obtenues depuis le back office TinaCloud :
 
 ```env
-NEXT_PUBLIC_TINA_CLIENT_ID=<votre-client-id>
-TINA_TOKEN=<votre-token>
+NEXT_PUBLIC_TINA_CLIENT_ID=<client-id sur la page overview>
+TINA_TOKEN=<token Content (Readonly) sur la page tokens>
 ```
 
 ### 4. Générer et commiter `tina-lock.json`
@@ -62,6 +65,8 @@ git push
 ```
 
 4. Dans TinaCloud, cliquer **Refresh Branches** -- la branche `main` doit apparaître
+
+> **Ne pas ajouter `tina-lock.json` au `.gitignore`.** TinaCloud en a besoin pour l'indexation.
 
 ### 5. Configurer les secrets GitHub
 
@@ -105,7 +110,7 @@ TTL :    3600 (ou auto)
 echo "mondomaine.fr" > public/CNAME
 ```
 
-> **Note :** si vous déployez sans domaine custom (sur `https://<username>.github.io/<repo-name>/`), ajoutez `BASE_PATH=/<repo-name>` dans les variables d'environnement du workflow `deploy.yml` pour que les assets CSS/JS se chargent correctement.
+> **Note :** si vous déployez sans domaine custom (sur `https://<username>.github.io/<repo-name>/`), ajoutez `base: "/<repo-name>"` dans `astro.config.mjs` et `basePath: "<repo-name>"` dans la propriété `build` de `tina/config.ts` pour que les assets et l'admin TinaCMS se chargent correctement.
 
 ### 8. Premier déploiement
 
@@ -119,7 +124,7 @@ docker compose run --rm --service-ports dev
 
 Le site est disponible sur `http://localhost:4321` et l'admin TinaCMS sur `http://localhost:4321/admin/`.
 
-> En mode local sans `.env`, TinaCMS utilise le filesystem directement. Les modifications sont écrites dans `content/`.
+> En mode local sans `.env` (ou avec des valeurs vides), TinaCMS utilise le filesystem directement. Les modifications sont écrites dans `content/`.
 
 ---
 
@@ -160,6 +165,39 @@ Commiter les fichiers générés, en particulier `config.prebuild.jsx` et `_sche
 - 2 utilisateurs
 - 2 projets
 - Modifications illimitées (chaque sauvegarde = un commit Git)
+
+---
+
+## Recréer le template de zéro (optionnel)
+
+Ces étapes ne sont nécessaires que si vous voulez reconstruire le socle technique depuis un projet vide, sans utiliser le template.
+
+```bash
+mkdir mon-site && cd mon-site
+git init
+
+# Initialiser Astro
+npm create astro@latest . -- --template minimal --typescript strict
+
+# Ajouter TinaCMS
+npx @tinacms/cli@latest init
+
+# Ajouter React et Tailwind
+npm install @astrojs/react react react-dom @tailwindcss/vite tailwindcss
+```
+
+Ensuite, reproduire la structure du template :
+
+- `tina/config.ts` : définir les collections, le build (`outputFolder: "admin"`) et les médias
+- `astro.config.mjs` : ajouter les intégrations `react()` et `tailwindcss()`
+- `src/layouts/Layout.astro` : layout avec header, nav, footer
+- `src/pages/index.astro` : page d'accueil qui fetch le contenu via le client TinaCMS
+- `content/pages/home.mdx` : contenu d'exemple
+- `compose.yaml` : services Docker (`dev`, `node`)
+- `.github/workflows/deploy.yml` : workflow de déploiement GitHub Pages
+- `.gitignore` : exclure `client.ts`, `.cache/`, `public/admin/`, `.env`
+
+Lancer `tinacms dev` une première fois pour générer `tina-lock.json`, le commiter et le pousser (voir étape 4 de la mise en route).
 
 ---
 
