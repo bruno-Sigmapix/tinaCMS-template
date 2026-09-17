@@ -14,19 +14,13 @@ Template prêt à l'emploi pour créer un site statique avec [Astro](https://ast
 
 ## Mise en route
 
-### 1. Créer le repo et installer
+### 1. Créer le repo (GitHub)
 
-Sur [bruno-Sigmapix/tinaCMS-template](https://github.com/bruno-Sigmapix/tinaCMS-template), cliquer **"Use this template"** > **"Create a new repository"**, puis :
+Sur [bruno-Sigmapix/tinaCMS-template](https://github.com/bruno-Sigmapix/tinaCMS-template), cliquer **"Use this template"** > **"Create a new repository"**.
 
-```bash
-git clone <url-de-votre-nouveau-repo> mon-site
-cd mon-site
-docker compose run --rm dev npm install
-```
+Pas besoin de le cloner tout de suite : l'étape suivante n'a besoin que du repo GitHub.
 
-> **Important :** ne pas faire `npm install` en local. Les dépendances doivent être installées dans le container Docker (Alpine/musl). Un `npm install` sur la machine hôte produira des binaires natifs incompatibles avec le container.
-
-### 2. Créer le projet TinaCloud
+### 2. Créer le projet TinaCloud (TinaCloud)
 
 1. Aller sur [app.tina.io](https://app.tina.io) et se connecter
 2. **Add Project** > **Existing Project**
@@ -37,20 +31,32 @@ docker compose run --rm dev npm install
    - `http://localhost:4321` (dev local)
    - L'URL de production (domaine custom ou `https://<username>.github.io/<repo-name>`)
 
-### 3. Configurer .env
+### 3. Cloner, configurer .env et installer (local)
 
 ```bash
+git clone <url-de-votre-nouveau-repo> mon-site
+cd mon-site
 cp .env.example .env
 ```
 
-Remplir les valeurs obtenues depuis le back office TinaCloud :
+Remplir `.env` avec les valeurs récupérées à l'étape précédente :
 
 ```env
 NEXT_PUBLIC_TINA_CLIENT_ID=<client-id sur la page overview>
 TINA_TOKEN=<token Content (Readonly) sur la page tokens>
 ```
 
-### 4. Générer et commiter `tina-lock.json`
+Puis installer les dépendances :
+
+```bash
+docker compose run --rm dev npm install
+```
+
+> **Important :** ne pas faire `npm install` en local. Les dépendances doivent être installées dans le container Docker (Alpine/musl). Un `npm install` sur la machine hôte produira des binaires natifs incompatibles avec le container.
+
+> **Pourquoi `--rm` :** sans cette option, chaque `docker compose run` laisse un conteneur arrêté derrière lui. Comme ces commandes sont répétées régulièrement, `--rm` évite d'accumuler des conteneurs morts au fil du temps — c'est pourquoi il est utilisé dans toutes les commandes de ce README.
+
+### 4. Générer et commiter `tina-lock.json` (local + TinaCloud)
 
 Le fichier `tina/tina-lock.json` est indispensable pour que TinaCloud puisse indexer le contenu et les branches. Il est généré par `tinacms dev` (pas par `tinacms build`).
 
@@ -68,7 +74,7 @@ git push
 
 > **Ne pas ajouter `tina-lock.json` au `.gitignore`.** TinaCloud en a besoin pour l'indexation.
 
-### 5. Configurer les secrets GitHub
+### 5. Configurer les secrets GitHub (GitHub)
 
 Dans **Settings > Secrets and variables > Actions**, ajouter :
 
@@ -77,13 +83,13 @@ Dans **Settings > Secrets and variables > Actions**, ajouter :
 | `TINA_CLIENT_ID` | Le Client ID de TinaCloud (même valeur que `NEXT_PUBLIC_TINA_CLIENT_ID` dans le `.env`) | [app.tina.io](https://app.tina.io) > Overview |
 | `TINA_TOKEN` | Le Read-Only Token de TinaCloud | [app.tina.io](https://app.tina.io) > Tokens |
 
-### 6. Activer GitHub Pages
+### 6. Activer GitHub Pages (GitHub)
 
 Dans **Settings > Pages** :
 
 - **Source** : GitHub Actions
 
-### 7. Configurer le domaine
+### 7. Configurer le domaine (local + GitHub)
 
 Décommenter et remplir `site` dans `astro.config.mjs` :
 
@@ -112,11 +118,11 @@ echo "mondomaine.fr" > public/CNAME
 
 > **Note :** si vous déployez sans domaine custom (sur `https://<username>.github.io/<repo-name>/`), ajoutez `base: "/<repo-name>"` dans `astro.config.mjs` et `basePath: "<repo-name>"` dans la propriété `build` de `tina/config.ts` pour que les assets et l'admin TinaCMS se chargent correctement.
 
-### 8. Premier déploiement
+### 8. Premier déploiement (GitHub)
 
 Aller dans **Actions** > workflow **Deploy to GitHub Pages** > **Run workflow**.
 
-### 9. Lancer le dev local
+### 9. Lancer le dev local (local)
 
 ```bash
 docker compose run --rm --service-ports dev
@@ -170,34 +176,7 @@ Commiter les fichiers générés, en particulier `config.prebuild.jsx` et `_sche
 
 ## Recréer le template de zéro (optionnel)
 
-Ces étapes ne sont nécessaires que si vous voulez reconstruire le socle technique depuis un projet vide, sans utiliser le template.
-
-```bash
-mkdir mon-site && cd mon-site
-git init
-
-# Initialiser Astro
-npm create astro@latest . -- --template minimal --typescript strict
-
-# Ajouter TinaCMS
-npx @tinacms/cli@latest init
-
-# Ajouter React et Tailwind
-npm install @astrojs/react react react-dom @tailwindcss/vite tailwindcss
-```
-
-Ensuite, reproduire la structure du template :
-
-- `tina/config.ts` : définir les collections, le build (`outputFolder: "admin"`) et les médias
-- `astro.config.mjs` : ajouter les intégrations `react()` et `tailwindcss()`
-- `src/layouts/Layout.astro` : layout avec header, nav, footer
-- `src/pages/index.astro` : page d'accueil qui fetch le contenu via le client TinaCMS
-- `content/pages/home.mdx` : contenu d'exemple
-- `compose.yaml` : services Docker (`dev`, `node`)
-- `.github/workflows/deploy.yml` : workflow de déploiement GitHub Pages
-- `.gitignore` : exclure `client.ts`, `.cache/`, `public/admin/`, `.env`
-
-Lancer `tinacms dev` une première fois pour générer `tina-lock.json`, le commiter et le pousser (voir étape 4 de la mise en route).
+Voir [RECREATE_TEMPLATE.md](RECREATE_TEMPLATE.md) si vous voulez reconstruire le socle technique depuis un projet vide, sans utiliser le template.
 
 ---
 
