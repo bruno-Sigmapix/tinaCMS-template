@@ -27,4 +27,24 @@ Ensuite, reproduire la structure du template :
 - `.github/workflows/deploy.yml` : workflow de déploiement GitHub Pages
 - `.gitignore` : exclure `client.ts`, `.cache/`, `public/admin/`, `.env`
 
-Lancer `tinacms dev` une première fois pour générer `tina-lock.json`, le commiter et le pousser (voir [étape 4 de la mise en route](README.md#tina-lock-json) du README).
+## Générer `tina-lock.json`
+
+Contrairement au flux normal du template (où `tina/tina-lock.json` est déjà commité et copié automatiquement par "Use this template", voir [étape 4 du README](README.md#tina-lock-json)), ici le fichier n'existe pas encore : ce projet part de zéro, il faut donc le générer soi-même. C'est une étape facile à manquer car rien ne l'indique explicitement dans le flux de setup habituel -- si TinaCloud affiche "No Tina config found" ou n'indexe aucune branche, c'est généralement que cette étape a été oubliée.
+
+Le fichier est généré uniquement par `tinacms dev` (au démarrage du serveur), **pas** par `tinacms build`. Procédure :
+
+1. Lancer le serveur de dev : `docker compose run --rm --service-ports dev`
+2. Attendre que le serveur démarre -- `tina/tina-lock.json` est créé à ce moment-là -- puis l'arrêter (Ctrl+C)
+3. Commiter et pousser le fichier généré :
+
+```bash
+git add tina/tina-lock.json
+git commit -m "Add tina-lock.json for TinaCloud indexing"
+git push
+```
+
+4. Dans TinaCloud, cliquer **Refresh Branches** -- la branche `main` doit apparaître
+
+> **Ne pas ajouter `tina-lock.json` au `.gitignore`.** TinaCloud en a besoin pour l'indexation, et il n'est pas régénérable côté TinaCloud lui-même.
+
+Voir aussi [Troubleshooting](README.md#no-tina-config-found) dans le README si la branche ne s'indexe toujours pas après ça.

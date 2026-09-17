@@ -56,23 +56,15 @@ docker compose run --rm dev npm install
 
 > **Pourquoi `--rm` :** sans cette option, chaque `docker compose run` laisse un conteneur arrêté derrière lui. Comme ces commandes sont répétées régulièrement, `--rm` évite d'accumuler des conteneurs morts au fil du temps — c'est pourquoi il est utilisé dans toutes les commandes de ce README.
 
-### 4. Générer et commiter `tina-lock.json` (local + TinaCloud)
+### 4. Vérifier l'indexation TinaCloud (TinaCloud)
 
-Le fichier `tina/tina-lock.json` est indispensable pour que TinaCloud puisse indexer le contenu et les branches. Il est généré par `tinacms dev` (pas par `tinacms build`).
+Le fichier `tina/tina-lock.json` est indispensable pour que TinaCloud puisse indexer le contenu et les branches. Il est déjà commité dans le template : **"Use this template" le copie automatiquement dans votre nouveau repo**, vous n'avez rien à générer.
 
-1. Lancer le serveur de dev : `docker compose run --rm --service-ports dev`
-2. Attendre que le serveur démarre, puis l'arrêter (Ctrl+C)
-3. Commiter et pousser le fichier généré :
-
-```bash
-git add tina/tina-lock.json
-git commit -m "Add tina-lock.json for TinaCloud indexing"
-git push
-```
-
-4. Dans TinaCloud, cliquer **Refresh Branches** -- la branche `main` doit apparaître
+Dans TinaCloud, cliquer **Refresh Branches** -- la branche `main` doit apparaître.
 
 > **Ne pas ajouter `tina-lock.json` au `.gitignore`.** TinaCloud en a besoin pour l'indexation.
+>
+> Si la branche n'apparaît pas ou que TinaCloud renvoie "No Tina config found", voir [Troubleshooting](#no-tina-config-found) -- vous y trouverez la procédure de génération manuelle du fichier (utile aussi si vous reconstruisez le projet sans le template, voir [RECREATE_TEMPLATE.md](RECREATE_TEMPLATE.md)).
 
 ### 5. Configurer les secrets GitHub (GitHub)
 
@@ -88,6 +80,8 @@ Dans **Settings > Secrets and variables > Actions**, ajouter :
 Dans **Settings > Pages** :
 
 - **Source** : GitHub Actions
+
+> Le menu déroulant "Source" propose deux options : **"GitHub Actions"** (celle à choisir ici) et **"Deploy from a branch"** (l'ancienne méthode). Si GitHub vous demande de préciser une branche, c'est que "Deploy from a branch" est encore sélectionné -- le workflow de ce template (`actions/deploy-pages`) ne pousse pas vers une branche, aucune branche n'est à choisir.
 
 ### 7. Configurer le domaine (local + GitHub)
 
@@ -195,10 +189,20 @@ C'est normal. Ce fichier est gitignoré et ne doit jamais être commité. Il est
 
 ### TinaCloud : "No Tina config found" / aucune branche indexée
 
-TinaCloud a besoin du fichier `tina/tina-lock.json` pour détecter le schéma. Ce fichier est généré uniquement par `tinacms dev`, pas par `tinacms build`. Si les branches ne s'indexent pas :
+TinaCloud a besoin du fichier `tina/tina-lock.json` pour détecter le schéma. Ce cas se produit typiquement si le fichier a été supprimé, ou si vous reconstruisez le projet sans le template (voir [RECREATE_TEMPLATE.md](RECREATE_TEMPLATE.md)) -- dans le flux normal (`Use this template`), le fichier est déjà présent et cette procédure n'est pas nécessaire.
 
-1. Lancer `docker compose run --rm --service-ports dev` puis l'arrêter
-2. Commiter et pousser `tina/tina-lock.json`
-3. Cliquer **Refresh Branches** dans TinaCloud
+Le fichier est généré uniquement par `tinacms dev`, **pas** par `tinacms build`. Pour le régénérer :
+
+1. Lancer `docker compose run --rm --service-ports dev`
+2. Attendre que le serveur démarre (il génère `tina/tina-lock.json` au démarrage), puis l'arrêter (Ctrl+C)
+3. Commiter et pousser le fichier généré :
+
+```bash
+git add tina/tina-lock.json
+git commit -m "Add tina-lock.json for TinaCloud indexing"
+git push
+```
+
+4. Cliquer **Refresh Branches** dans TinaCloud -- la branche `main` doit apparaître
 
 Si ça ne fonctionne toujours pas, supprimer le projet dans TinaCloud et le recréer.
