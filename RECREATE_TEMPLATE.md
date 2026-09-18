@@ -18,7 +18,7 @@ npm install @astrojs/react react react-dom @tailwindcss/vite tailwindcss
 
 Ensuite, reproduire la structure du template :
 
-- `tina/config.ts` : définir les collections, le build (`outputFolder: "admin"`) et les médias
+- `tina/config.ts` : définir les collections, le build (`outputFolder: "admin"`, `host: "0.0.0.0"` pour l'accès en Docker) et les médias
 - `astro.config.mjs` : ajouter les intégrations `react()` et `tailwindcss()`
 - `src/layouts/Layout.astro` : layout avec header, nav, footer
 - `src/pages/index.astro` : page d'accueil qui fetch le contenu via le client TinaCMS

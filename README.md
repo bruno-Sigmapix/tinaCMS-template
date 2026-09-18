@@ -126,6 +126,8 @@ Le site est disponible sur `http://localhost:4321` et l'admin TinaCMS sur `http:
 
 > En mode local sans `.env` (ou avec des valeurs vides), TinaCMS utilise le filesystem directement. Les modifications sont écrites dans `content/`.
 
+> `tina/config.ts` définit `host: "0.0.0.0"` dans le bloc `build` -- c'est ce qui permet au serveur Vite interne de Tina (port 4001, distinct d'Astro) d'accepter les connexions venant du port-forwarding Docker. Si l'admin ne charge pas ses assets, voir [Troubleshooting](#failed-loading-tinacms-assets).
+
 ---
 
 ## Utilisation
@@ -206,3 +208,25 @@ git push
 4. Cliquer **Refresh Branches** dans TinaCloud -- la branche `main` doit apparaître
 
 Si ça ne fonctionne toujours pas, supprimer le projet dans TinaCloud et le recréer.
+
+<a id="failed-loading-tinacms-assets"></a>
+
+### "Failed loading TinaCMS assets" / ERR_EMPTY_RESPONSE sur `/admin/` en local
+
+Le serveur Vite interne de Tina (port 4001, distinct du serveur Astro sur 4321) n'accepte par défaut que les connexions strictement locales. Passé par le port-forwarding de Docker, les requêtes n'apparaissent plus comme locales et sont rejetées -- d'où un `ERR_EMPTY_RESPONSE` sur `localhost:4001` et l'admin qui ne charge pas ses assets.
+
+Le réglage `host: "0.0.0.0"` dans le bloc `build` de `tina/config.ts` est censé empêcher ça. Si le problème survient quand même :
+
+1. Vérifier que `host: "0.0.0.0"` est bien présent dans `tina/config.ts`
+2. Régénérer les fichiers Tina : `docker compose run --rm dev npx tinacms build --skip-cloud-checks`
+3. Relancer `docker compose run --rm --service-ports dev`
+
+### "Another astro dev server is already running" / le conteneur ne démarre plus
+
+Astro écrit un verrou `.astro/dev.json` (avec le PID du process) pour détecter un serveur déjà lancé. Comme chaque `docker compose run --rm dev` démarre un nouveau conteneur (donc un nouvel espace de PID), un verrou laissé par un conteneur précédent arrêté abruptement (Ctrl+C dur, crash, `docker kill`) référence un PID sans rapport avec le nouveau conteneur -- ce qui peut provoquer un crash silencieux au démarrage.
+
+`compose.yaml` nettoie déjà ce verrou automatiquement à chaque lancement. Si besoin de le faire manuellement :
+
+```bash
+rm -f .astro/dev.json .astro/dev.log
+```

@@ -12,6 +12,10 @@ export default defineConfig({
     outputFolder: "admin",
     publicFolder: "public",
     basePath: "",
+    // Nécessaire pour accéder à l'admin depuis l'hôte quand `tinacms dev`
+    // tourne dans Docker : sans ça, le serveur Vite interne (port 4001)
+    // rejette les connexions qui ne viennent pas de la loopback locale.
+    host: "0.0.0.0",
   },
   media: {
     tina: {
